@@ -1,0 +1,100 @@
+{% assign ptitle = '' %}
+        {% for itemr in cart.items %}{% if itemr.product.type == 'pattern' %}
+        {% assign property_sizem = itemr.properties | size %}
+        {% if property_sizem > 0 %}
+          {% for pp in itemr.properties %}
+            {% if pp.first == '_Case' and pp.last == pmtitle %}
+             {% assign ptitle = pp.last | handle %}
+             {% assign pid = itemr.id %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+        {% endif %}{% endfor %}
+        {% if pmtitle == ptitle %}
+        <div style="padding-top: 5px;"></div>
+        <p class="cart__product-meta" style="font-size:13px; background-color:#EEEEEE; border-radius:12px; padding-left:10px; max-width:68px;">
+          <a onclick="removeThis{{ forloop.index }}();" href="javascript:void(0);" class="removeEsto">Remove</a>
+          <script> function removeThis{{ forloop.index }}() { jQuery.post('/cart/update.js', {updates: { {{pid}}: 0, {{item.id}}: 0} });location.reload(); } </script>
+        </p>
+        {% else %}
+        <p class="cart__product-meta " style="font-size:14px; background-color: #EEEEEE; border-radius: 12px; padding: 0px 8px; max-width: 68px">
+          <a href="/cart/change?line={{ forloop.index }}&amp;quantity=0">
+            {{ 'cart.general.remove' | t }}
+          </a>
+        </p>
+{% endif %}
+
+<a href="/cart/add?id={{product.selected_or_first_available_variant.id}}&quantity=1" class="btn btn--add-to-cart{% if section.settings.enable_payment_button %} btn--secondary-accent{% endif %}"{% unless current_variant.available %} disabled="disabled"{% endunless %}>
+      <span class="btn__text">
+        {% if current_variant.available %}
+          {{ 'products.product.add_to_cart' | t }}
+        {% else %}
+          {{ 'products.product.sold_out' | t }}
+        {% endif %}
+      </span>
+    </a>
+
+https://yourdomain.com/cart/add?id[]={product_id}&quantity={quantity}&id[]={product_id}&quantity={qu...}
+========================
+
+{%- for ad in product.tags -%}{%- if ad contains 'Additional:' -%}{%- assign prohndle = ad | remove: 'Additional:' | handle -%}{%- assign addtionalproduct = all_products[prohndle] -%}{%- capture adtitle -%}{{- addtionalproduct.title -}}{%- endcapture -%}{%- capture adid -%}{{- addtionalproduct.selected_or_first_available_variant.id -}}{%- endcapture -%}{%- endif -%}{%- endfor -%}
+<input type="hidden" name="properties[_Additional]" id="addproductid" value="{{adid}}">
+<a id="adprobutton" href="/cart/add?id[]={{product.selected_or_first_available_variant.id}}&quantity=1&properties[_Additional]={{adid}}&id[]={{adid}}&quantity=1" class="btn btn--add-to-cart{% if section.settings.enable_payment_button %} btn--secondary-accent{% endif %}"{% unless current_variant.available %} disabled="disabled"{% endunless %}>
+<span class="btn__text">
+{% if current_variant.available %}
+{{ 'products.product.add_to_cart' | t }}
+{% else %}
+{{ 'products.product.sold_out' | t }}
+{% endif %}
+</span>
+</a>
+
+{% if template == 'product' %}
+<script type="text/javascript">
+$(document).ready(function() {
+$('.product-single__variants, .single-option-selector ,[name="quantity"]').on('change input keyup paste', function () {
+var vid = $('.product-single__variants').val(), vqt = $('[name="quantity"]').val(), adid = $('#addproductid').val();
+$('#adprobutton').attr('href','/cart/add?id[]='+vid+'&quantity='+vqt+'&properties[_Additional]='+adid+'&id[]='+adid+'&quantity='+vqt);
+});
+});
+</script>
+{% elsif template == 'cart' %}
+<script type="text/javascript">
+$(document).ready(function() {
+$('.cart__product-qty').on('change input keyup paste', function () {
+var removelink = $(this).parents('.cart__row').find('.addid a');
+var vid = $(this).parents('.cart__row').find('.mw-product-fees').data('id'), adid = $(this).parents('.cart__row').find('.additionalid').data('id');
+removelink.attr('href','/cart/change?id[]='+vid+'&quantity=0&id[]='+adid+'&quantity=0);
+});
+});
+</script>
+{% endif %}
+
+
+
+
+{% if item.product.title == 'Glass Bottles' %} <span class="additionalid" data-id="{{forloop.index}}" style="display:none;"></span> {% endif %}
+    <span class="mw-product-fees" data-id="{{ item.id }}"></span>
+    {% assign adenable = false %}
+    {% if property_size > 0 %}
+     {% for pp in item.properties %}
+       {% if pp.first == '_Additional' %}
+        {% assign adenable = true %}
+        {% assign adid = pp.last %}
+       {% endif %}
+     {% endfor %}
+    {% endif %}
+    {% if adenable %}
+    <p class="cart__product-meta addid">
+      <a onclick="removeThis{{ forloop.index }}();" href="javascript:void(0);">
+        {{ 'cart.general.remove' | t }}
+      </a>
+      <script> function removeThis{{ forloop.index }}() { $.post('/cart/update.js', {updates: { {{adid}}:0,{{item.id}}:0 } }); setTimeout(function(){ location.reload(); }, 2000); } </script>
+    </p>
+    {% elsif item.product.title == 'Glass Bottles' %}{% else %}
+    <p class="cart__product-meta">
+      <a href="{{ routes.cart_change_url }}?line={{ forloop.index }}&amp;quantity=0">
+        {{ 'cart.general.remove' | t }}
+      </a>
+    </p>
+    {% endif %}
